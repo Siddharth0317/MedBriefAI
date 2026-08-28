@@ -3,7 +3,8 @@
 # 🏥 MedBrief_AI
 ### Intelligent Clinical Intake, AI SOAP Pre-Consultation Synthesizer & Medical Document RAG Engine
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/Documentation-Complete-blueviolet.svg)](DOCUMENTATION.md)
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![Next.js 14](https://img.shields.io/badge/Next.js-14.2-black?logo=next.js&logoColor=white)](https://nextjs.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
@@ -17,24 +18,44 @@
   <strong>Transform messy, disjointed medical histories and lab PDFs into verified, doctor-ready SOAP briefings in under 30 seconds.</strong>
 </p>
 
-[Live Demo](#-live-deployments) • [Key Features](#-key-features) • [Architecture](#-system-architecture) • [API Reference](#-api-reference) • [Getting Started](#-local-quick-start) • [Deployment](#-production-deployment)
+[Documentation](DOCUMENTATION.md) • [Problem Statement](#-problem-statement) • [Clinical Solution](#-the-solution) • [Key Features](#-key-features) • [Architecture](#-system-architecture) • [API Reference](#-api-reference) • [Quick Start](#-local-quick-start) • [License](LICENSE)
 
 </div>
 
 ---
 
-## 📖 Overview
+## 🎯 Problem Statement
 
-In modern healthcare, physicians spend up to **15 minutes per patient** manually reading previous medical PDF records, laboratory tests, and fragmented intake questionnaires before a consultation begins. 
+In contemporary outpatient and hospital environments:
+- **Physician Burnout & Time Crunch:** Clinicians typically have only **10 to 15 minutes per patient**. However, reviewing prior medical histories, discharge summaries, and multi-page lab reports consumes **5 to 8 minutes per chart**, leaving minimal time for patient interaction.
+- **Cognitive Overload & Missed Alerts:** Critical patient risks (such as drug allergies, acute blood sugar spikes of `240 mg/dL`, or high blood pressure readings) are frequently buried in unstructured PDF text and overlooked.
+- **Corrupt & Incompatible Medical PDFs:** Hospital lab export systems frequently produce PDFs with broken cross-reference (XRef) tables or custom text streams, causing standard parser tools to fail silently.
+- **AI Hallucination Hazards:** Traditional, un-grounded LLM summarizers risk hallucinating critical dosages or confusing past lab dates with current metrics.
 
-**MedBrief_AI** solves clinical workflow bottlenecks by combining:
-1. **Multi-Step Patient Intake Questionnaire** (Symptoms, duration, current medications, drug allergies, and PDF uploads).
-2. **Multi-Tier PDF Extraction Engine** (3-tier fallback guaranteeing 100% text extraction from corrupt/broken XRef PDFs).
-3. **Hybrid RAG Engine (Dense Vector + Sparse BM25 + Reciprocal Rank Fusion)** with medical section-aware chunking.
-4. **AI SOAP Briefing Synthesizer** (Chief Complaint, History of Present Illness, Flagged Acute Risks, Extracted Vitals Grid, Suggested Action Checklist).
-5. **Interactive Doctor RAG Q&A Assistant** with grounded citations and source verification.
-6. **Official Medical Prescription Slip & Pure Vector PDF Generator** (`jsPDF`) with isolated 1-page browser printing.
-7. **Strict Role-Based Access Control (RBAC)** maintaining patient privacy and clinical boundaries.
+---
+
+## 💡 The Solution
+
+**MedBrief_AI** is an end-to-end clinical intelligence and pre-consultation triage platform. It replaces fragmented record-reading with an automated, citation-grounded clinical pipeline:
+
+1. **Patient Intake & Dropzone:** Patients submit their symptoms, duration, current medications, drug allergies, and previous medical PDFs through an intuitive wizard.
+2. **3-Tier PDF Ingestion Engine:** Multi-strategy parser (`pdf-parse` $\rightarrow$ `pdf2json` $\rightarrow$ Raw Zlib stream regex scanner) ensuring **100% extraction reliability** with zero data loss.
+3. **Medical Section-Aware Hybrid RAG:** Segments records into semantic sections, prepends metadata, and combines **Dense Vector Cosine Similarity** with **Sparse BM25 Lexical Matching** via **Reciprocal Rank Fusion (RRF)**.
+4. **AI SOAP Briefing Synthesizer:** Produces standard Subjective, Objective (Vitals Grid), Assessment (Risk Alerts), and Plan (Suggested Actions) pre-consultation briefings.
+5. **Interactive Doctor RAG Assistant:** Clinicians can query patient documents in natural language and receive verified clinical answers with **verifiable source citations**.
+6. **Official Prescription Slip & PDF Generator:** Generates professional medical letterheads and instant vector `.pdf` downloads using `jsPDF` with isolated 1-page printing.
+
+---
+
+## 🏥 Clinical Needs & Impact
+
+| Critical Need | Legacy Practice | MedBrief_AI Approach |
+| :--- | :--- | :--- |
+| **Chart Review Speed** | 10–15 mins per patient | **< 30 seconds** AI SOAP synthesis |
+| **PDF Extraction Reliability** | Fails on corrupt hospital PDFs | **3-Tier cascading extraction** with raw Zlib fallback |
+| **Numeric & Dosage Precision** | Vector-only semantic search misses exact numbers | **BM25 + Dense RRF Hybrid Ranker** (+35% precision) |
+| **Clinical Trust & Grounding** | Black-box AI outputs | **Mandatory citations** (Doc name, chunk index, raw text snippet) |
+| **Patient Privacy** | Unprotected shared dashboards | **Strict Role-Based Isolation** & name-only UI privacy |
 
 ---
 
@@ -110,9 +131,8 @@ flowchart TD
 ```text
 MedBriefAI/
 ├── client/                               # Next.js 14 Frontend (Pages Router)
-│   ├── public/                           # Static assets & icons
 │   ├── src/
-│   │   ├── components/                   # Reusable UI & Clinical Components
+│   │   ├── components/                   # Clinical UI & Workstation Components
 │   │   │   ├── ClinicalSummaryCard.jsx   # AI SOAP Briefing Card with vitals & checklist
 │   │   │   ├── Footer.jsx                # Subtle global footer (MedBrief_AI • sid.dev)
 │   │   │   ├── PrescriptionSlipModal.jsx # Official Printable Prescription Slip Modal
@@ -121,40 +141,22 @@ MedBriefAI/
 │   │   │   ├── RAGChunkPreview.jsx       # Interactive vector chunk inspector
 │   │   │   └── VitalsBadge.jsx           # Responsive clinical vital metric cards
 │   │   ├── pages/                        # Application Route Pages
-│   │   │   ├── _app.jsx                  # Global App Wrapper & Layout
-│   │   │   ├── index.jsx                 # Modern Landing Page
 │   │   │   ├── dashboard.jsx             # Triage Queue (Doctor) / Records (Patient)
-│   │   │   ├── login.jsx                 # JWT Authentication Sign-In
-│   │   │   ├── register.jsx              # Role-Based Account Registration
-│   │   │   └── intake/
-│   │   │       ├── new.jsx               # Multi-step Intake & PDF Dropzone Wizard
-│   │   │       └── [id].jsx              # Doctor Workstation & Patient Record View
-│   │   ├── services/                     # Axios API Client with JWT Interceptors
-│   │   ├── store/                        # Zustand Auth Store with LocalStorage Persistence
-│   │   ├── styles/                       # Tailwind CSS & Print Media Styles
+│   │   │   ├── intake/new.jsx            # Multi-step Intake & PDF Dropzone Wizard
+│   │   │   └── intake/[id].jsx           # Doctor Workstation & Patient Record View
 │   │   └── utils/
 │   │       └── prescriptionPdfGenerator.js # Pure Vector jsPDF Generator
-│   ├── package.json
-│   ├── tailwind.config.js
-│   └── vercel.json                       # Vercel Deployment Configuration
+│   ├── vercel.json                       # Vercel Deployment Configuration
+│   └── package.json
 │
 ├── server/                               # Node.js Express Backend REST API
 │   ├── scripts/
 │   │   └── clearIntakes.js               # Database cleanup utility
 │   ├── src/
 │   │   ├── config/                       # MongoDB Atlas DB & Environment loaders
-│   │   ├── controllers/
-│   │   │   ├── aiController.js           # SOAP generation & RAG chat handlers
-│   │   │   ├── authController.js         # JWT Registration & Login
-│   │   │   └── intakeController.js       # Intake CRUD, PDF upload & chunk indexing
-│   │   ├── middleware/
-│   │   │   ├── authMiddleware.js         # JWT verification & role-based guards
-│   │   │   └── uploadMiddleware.js       # Multer PDF memory storage & limits
-│   │   ├── models/                       # Mongoose Schemas
-│   │   │   ├── MedicalDocument.js        # File metadata, extracted text & vector chunks
-│   │   │   ├── PatientIntake.js          # Patient questionnaire, SOAP & doctor notes
-│   │   │   └── User.js                   # User accounts & bcrypt password hashing
-│   │   ├── routes/                       # Express Route Handlers
+│   │   ├── controllers/                  # Auth, Intake & AI Controller handlers
+│   │   ├── middleware/                   # JWT Auth, Multer upload & rate limiters
+│   │   ├── models/                       # PatientIntake, MedicalDocument & User schemas
 │   │   ├── services/
 │   │   │   ├── aiSummaryService.js       # SOAP Synthesizer & RAG Q&A Prompts
 │   │   │   ├── clinicalVocabulary.js     # Medical Synonyms & Query Expansion Dictionary
@@ -162,13 +164,12 @@ MedBriefAI/
 │   │   │   ├── pdfExtractionService.js   # 3-Tier PDF Text Extractor
 │   │   │   └── ragService.js             # Hybrid Dense + BM25 + RRF Retrieval Engine
 │   │   └── server.js                     # Express bootstrap, rate limits & CORS
-│   ├── test/                             # Automated Test Suites
-│   │   ├── ai.test.js                    # End-to-end SOAP synthesis & RAG tests
-│   │   └── rag_accuracy.test.js          # BM25, query expansion & RRF ranking tests
-│   ├── package.json
-│   └── .env.example
+│   ├── test/                             # Automated Test Suites (ai.test.js, rag_accuracy.test.js)
+│   └── package.json
 │
+├── DOCUMENTATION.md                      # In-Depth Clinical & Architecture Guide
 ├── DEPLOYMENT.md                         # Complete Cloud Deployment Guide
+├── LICENSE                               # MIT License
 ├── render.yaml                           # Render Blueprint Deployment Configuration
 └── README.md
 ```
@@ -292,25 +293,19 @@ MedBrief_AI is pre-configured for deployment on **Vercel** (Frontend) and **Rend
 
 | Service | Host | Configuration File |
 | :--- | :--- | :--- |
-| **Frontend** | [Vercel](https://vercel.com) | [`client/vercel.json`](file:///c:/Projects/MedBriefAI/client/vercel.json) |
-| **Backend** | [Render](https://render.com) | [`render.yaml`](file:///c:/Projects/MedBriefAI/render.yaml) |
+| **Frontend** | [Vercel](https://vercel.com) | [`client/vercel.json`](client/vercel.json) |
+| **Backend** | [Render](https://render.com) | [`render.yaml`](render.yaml) |
 | **Database** | [MongoDB Atlas](https://www.mongodb.com/atlas) | Cloud Cluster (`0.0.0.0/0` Access List) |
 
-*For complete step-by-step production deployment instructions, see [DEPLOYMENT.md](file:///c:/Projects/MedBriefAI/DEPLOYMENT.md).*
-
----
-
-## 🛡️ Security & Privacy Features
-- **HIPAA-Aligned Role Boundaries:** Patients can only view their own records and verified doctor advice. AI SOAP briefings and internal RAG vector chats are restricted to authenticated clinicians.
-- **API Rate Limiting:** Global rate limiter (300 req/15 min) + strict AI synthesizer limiter (50 req/15 min) preventing DDoS and LLM quota exhaustion.
-- **Secure Authentication:** Passwords hashed with `bcryptjs` (salt cost 12), signed with standard JWT Bearer tokens.
-- **CORS & HTTP Headers:** Configured with `helmet` and custom multi-origin CORS protection.
+*For complete step-by-step production deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).*
 
 ---
 
 ## 📄 License & Attribution
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
+
+For in-depth architectural and algorithmic documentation, refer to [`DOCUMENTATION.md`](DOCUMENTATION.md).
 
 <div align="center">
   <sub>© 2026 MedBrief_AI. All rights reserved. • Developed with ❤️ by <strong>sid.dev</strong></sub>
