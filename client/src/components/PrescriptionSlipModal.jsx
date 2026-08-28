@@ -12,14 +12,14 @@ import {
   AlertTriangle,
   Building2,
   Check,
-  Loader2,
-  FileCheck
+  Loader2
 } from 'lucide-react';
+import { generatePrescriptionPDF } from '../utils/prescriptionPdfGenerator';
 
 /**
  * PrescriptionSlipModal Component
  * Renders an official medical prescription slip with printable letterhead,
- * direct PDF generation and 1-page browser print support.
+ * direct vector PDF generation via jsPDF, and isolated 1-page browser print.
  * @param {Object} props
  * @param {Object} props.intake - Intake details
  * @param {Array} [props.documents=[]] - Attached documents
@@ -27,6 +27,7 @@ import {
  */
 const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   // Close on Escape key press
   useEffect(() => {
@@ -41,7 +42,7 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
 
   if (!intake) return null;
 
-  const doctorName = intake.assignedDoctorId?.name || 'Attending Physician';
+  const doctorName = intake.assignedDoctorId?.name ? `Dr. ${intake.assignedDoctorId.name}` : 'Attending Physician';
   const patientName = intake.patientId?.name || 'Patient';
   const issueDate = new Date(intake.updatedAt || intake.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -49,34 +50,88 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
     day: 'numeric',
   });
 
-  // Native Browser Print Dialog
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // Direct Client-Side PDF Generator & Downloader
-  const handleDownloadPDF = async () => {
+  // Direct Vector PDF Download via jsPDF (Instant, Never Blank)
+  const handleDownloadPDF = () => {
     setIsDownloadingPDF(true);
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
-      const element = document.getElementById('prescription-printable-area');
-
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `Prescription_${patientName.replace(/\s+/g, '_')}_${intake._id.slice(-6)}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      };
-
-      await html2pdf().set(opt).from(element).save();
+      generatePrescriptionPDF(intake);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
     } catch (err) {
       console.error('PDF generation error:', err);
-      // Fallback to print dialog if html2canvas encounters issues
-      window.print();
+      alert('Failed to generate PDF. Please try the Print button.');
     } finally {
       setIsDownloadingPDF(false);
+    }
+  };
+
+  // Dedicated Clean 1-Page Iframe Print (No modal bleed, No blank pages)
+  const handlePrint = () => {
+    const element = document.getElementById('prescription-printable-area');
+    if (!element) {
+      window.print();
+      return;
+    }
+
+    try {
+      const printIframe = document.createElement('iframe');
+      printIframe.style.position = 'fixed';
+      printIframe.style.right = '0';
+      printIframe.style.bottom = '0';
+      printIframe.style.width = '0';
+      printIframe.style.height = '0';
+      printIframe.style.border = 'none';
+      document.body.appendChild(printIframe);
+
+      const iframeDoc = printIframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Prescription_${patientName.replace(/\s+/g, '_')}_${intake._id.slice(-6)}</title>
+            <style>
+              @page { size: A4 portrait; margin: 15mm 15mm; }
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+                margin: 0; 
+                padding: 0;
+                color: #0f172a; 
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              * { box-sizing: border-box; }
+              .printable-card {
+                width: 100%;
+                max-width: 100%;
+                margin: 0 auto;
+              }
+            </style>
+            <!-- Include Tailwind CDN in print iframe to preserve styles -->
+            <script src="https://cdn.tailwindcss.com"></script>
+          </head>
+          <body class="bg-white p-4">
+            <div class="printable-card">
+              ${element.innerHTML}
+            </div>
+          </body>
+        </html>
+      `);
+      iframeDoc.close();
+
+      setTimeout(() => {
+        printIframe.contentWindow.focus();
+        printIframe.contentWindow.print();
+        setTimeout(() => {
+          if (document.body.contains(printIframe)) {
+            document.body.removeChild(printIframe);
+          }
+        }, 2000);
+      }, 500);
+    } catch (e) {
+      console.warn('Iframe print fallback to window.print', e);
+      window.print();
     }
   };
 
@@ -91,7 +146,7 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
       <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[92vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden relative">
         
         {/* Sticky Top Control Toolbar (Always Visible) */}
-        <div className="print:hidden p-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 flex-shrink-0 z-10">
+        <div className="p-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 flex-shrink-0 z-10">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-cyan-300">
               <Stethoscope className="w-4 h-4" />
@@ -108,12 +163,17 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
               onClick={handleDownloadPDF}
               disabled={isDownloadingPDF}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-600/30 transition cursor-pointer disabled:opacity-50"
-              title="Download official PDF file"
+              title="Download PDF directly to your device"
             >
-              {isDownloadingPDF ? (
+              {downloadSuccess ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-300" />
+                  <span>PDF Downloaded!</span>
+                </>
+              ) : isDownloadingPDF ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Generating PDF...</span>
+                  <span>Downloading...</span>
                 </>
               ) : (
                 <>
@@ -126,12 +186,11 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
             <button
               type="button"
               onClick={handlePrint}
-              disabled={isDownloadingPDF}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition cursor-pointer"
-              title="Open browser print dialog"
+              title="Open browser print preview (1 Page)"
             >
               <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Print</span>
+              <span className="hidden sm:inline">Print Slip</span>
             </button>
 
             <button
@@ -194,7 +253,7 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
               <span className="font-bold text-slate-400 uppercase text-[10px] block">
                 Attending Physician
               </span>
-              <div className="font-bold text-sm text-cyan-900">Dr. {doctorName}</div>
+              <div className="font-bold text-sm text-cyan-900">{doctorName}</div>
               <div className="text-slate-600">Consulting Medical Officer</div>
               <div className="text-emerald-700 font-semibold flex items-center gap-1 mt-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -259,7 +318,7 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
             <div className="text-left sm:text-right space-y-1 flex-shrink-0">
               <div className="w-44 border-b border-slate-400 pb-1 mx-auto sm:ml-auto">
                 <span className="font-serif italic text-sm text-cyan-900 font-bold">
-                  Dr. {doctorName}
+                  {doctorName}
                 </span>
               </div>
               <div className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
@@ -273,7 +332,7 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
         </div>
 
         {/* Sticky Bottom Action Toolbar (Always Visible) */}
-        <div className="print:hidden p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between flex-shrink-0">
+        <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between flex-shrink-0">
           <div className="text-xs text-slate-500 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>Official medical consultation record</span>
@@ -290,11 +349,10 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
             <button
               type="button"
               onClick={handlePrint}
-              disabled={isDownloadingPDF}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Print</span>
+              <span>Print Slip</span>
             </button>
             <button
               type="button"
@@ -302,10 +360,15 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
               disabled={isDownloadingPDF}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer disabled:opacity-50"
             >
-              {isDownloadingPDF ? (
+              {downloadSuccess ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-300" />
+                  <span>PDF Downloaded!</span>
+                </>
+              ) : isDownloadingPDF ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Generating PDF...</span>
+                  <span>Downloading...</span>
                 </>
               ) : (
                 <>
