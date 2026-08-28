@@ -7,6 +7,7 @@ const { connectDB, disconnectDB } = require('./config/db');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const intakeRoutes = require('./routes/intakeRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.get('/api/health', (req, res) => {
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/intake', intakeRoutes);
+app.use('/api/intake', aiRoutes);
 
 // Catch-all 404 handler for undefined API routes
 app.use((req, res, next) => {

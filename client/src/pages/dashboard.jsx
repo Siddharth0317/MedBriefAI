@@ -429,6 +429,14 @@ export default function Dashboard() {
 
                       {/* Right: Actions */}
                       <div className="flex sm:flex-col items-end justify-between sm:justify-start gap-2 flex-shrink-0">
+                        <Link
+                          href={`/intake/${intake._id}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold shadow-sm transition"
+                        >
+                          <span>Open Workstation</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+
                         {user?.role === 'doctor' && (
                           <div className="flex items-center gap-2">
                             <select
@@ -439,6 +447,7 @@ export default function Dashboard() {
                             >
                               <option value="Submitted">Submitted</option>
                               <option value="Under_Review">Under Review</option>
+                              <option value="Briefing_Ready">Briefing Ready</option>
                               <option value="Completed">Completed</option>
                             </select>
                           </div>
