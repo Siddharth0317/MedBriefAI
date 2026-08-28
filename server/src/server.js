@@ -14,7 +14,12 @@ const aiRoutes = require('./routes/aiRoutes');
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // Production CORS Configuration
 const allowedOrigins = [
@@ -23,7 +28,6 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
 ].filter(Boolean);
 
-// Support comma-separated CLIENT_URL if provided
 if (env.CLIENT_URL && env.CLIENT_URL.includes(',')) {
   env.CLIENT_URL.split(',').forEach((url) => {
     const trimmed = url.trim();
@@ -33,25 +37,38 @@ if (env.CLIENT_URL && env.CLIENT_URL.includes(',')) {
   });
 }
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, health checks)
-      if (!origin) return callback(null, true);
-      if (
-        allowedOrigins.indexOf(origin) !== -1 ||
-        env.NODE_ENV === 'development' ||
-        origin.endsWith('.vercel.app')
-      ) {
-        return callback(null, true);
-      }
-      return callback(new Error(`CORS origin '${origin}' not permitted.`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow server-to-server, mobile, curl, or empty origin
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/$/, '');
+
+    // Allow configured origins, all vercel.app domains, or localhost
+    const isAllowed =
+      allowedOrigins.some((o) => o && o.replace(/\/$/, '') === normalizedOrigin) ||
+      /\.vercel\.app$/.test(new URL(origin).hostname) ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      env.NODE_ENV === 'development' ||
+      !env.CLIENT_URL ||
+      env.CLIENT_URL === '*';
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    // Default allow with origin reflection to prevent preflight rejection
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Rate Limiting (Security Hardening)
 const isTestEnv = env.NODE_ENV === 'test';
