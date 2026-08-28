@@ -487,7 +487,7 @@ export default function IntakeDetail() {
                 </span>
               </div>
 
-              <div className="p-6">
+              <div className="p-6 space-y-4">
                 {intake.doctorNotes ? (
                   <div className="space-y-3">
                     <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">
@@ -507,6 +507,62 @@ export default function IntakeDetail() {
                     <p className="text-xs text-slate-500 max-w-md mx-auto">
                       Your intake submission has been received by our clinic. Once the consulting physician completes the review, prescription details and clinical remarks will appear here.
                     </p>
+                  </div>
+                )}
+
+                {/* Doctor's Action Checklist (Patient Visible) */}
+                {intake.aiSummary?.suggestedActions && intake.aiSummary.suggestedActions.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-cyan-600" />
+                        <span>Doctor's Clinical Care Plan Checklist</span>
+                      </h4>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200">
+                        {(intake.aiSummary.completedActions || []).length} of {intake.aiSummary.suggestedActions.length} Completed
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {intake.aiSummary.suggestedActions.map((action, idx) => {
+                        const isDone = (intake.aiSummary.completedActions || []).includes(action);
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition ${
+                              isDone
+                                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950 font-medium'
+                                : 'bg-slate-50 border-slate-200 text-slate-600'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className={`w-5 h-5 rounded-md flex items-center justify-center ${
+                                  isDone
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'border border-slate-300 bg-white text-transparent'
+                                }`}
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </div>
+                              <span className={isDone ? 'line-through text-slate-500' : 'font-medium text-slate-800'}>
+                                {action}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                isDone
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  : 'bg-slate-200 text-slate-600'
+                              }`}
+                            >
+                              {isDone ? 'Checked by Doctor' : 'Pending'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
