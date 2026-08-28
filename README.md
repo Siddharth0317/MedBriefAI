@@ -9,7 +9,7 @@
 [![Next.js 14](https://img.shields.io/badge/Next.js-14.2-black?logo=next.js&logoColor=white)](https://nextjs.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![MongoDB Atlas](https://img.shields.io/badge/MongoDB-Atlas%20Cloud-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
-[![Gemini AI](https://img.shields.io/badge/Google-Gemini%201.5%20Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
+[![Gemini AI](https://img.shields.io/badge/Google-Gemini%203.5%20Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-Multi--LLM-6366F1)](https://openrouter.ai)
 [![Vercel](https://img.shields.io/badge/Deployed-Vercel-black?logo=vercel&logoColor=white)](https://vercel.com)
 [![Render](https://img.shields.io/badge/Deployed-Render-46E3B7?logo=render&logoColor=white)](https://render.com)
