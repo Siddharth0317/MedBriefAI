@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Heart, Droplet, Gauge, Wind, Thermometer } from 'lucide-react';
+import { Activity, Heart, Droplet, Gauge, Wind, Thermometer, AlertCircle } from 'lucide-react';
 
 /**
  * Metric configuration for clinical vitals
@@ -36,14 +36,14 @@ const VITAL_CONFIGS = {
     abnormalLabel: 'Abnormal',
   },
   cholesterol: {
-    label: 'Total Cholesterol',
+    label: 'Cholesterol',
     icon: Activity,
     unit: 'mg/dL',
     isAbnormal: (val) => {
       const num = parseInt(val, 10);
       return !isNaN(num) && num >= 200;
     },
-    abnormalLabel: 'Borderline/High',
+    abnormalLabel: 'High',
   },
   oxygenSaturation: {
     label: 'SpO2 Oxygen',
@@ -69,6 +69,8 @@ const VITAL_CONFIGS = {
 
 /**
  * VitalsBadge Component
+ * Displays individual clinical vital/lab metric with abnormal badges,
+ * no text truncation, and full responsiveness.
  * @param {Object} props
  * @param {string} props.vitalKey - Key name in extractedVitals
  * @param {string} props.value - Value string
@@ -88,35 +90,38 @@ const VitalsBadge = ({ vitalKey, value }) => {
 
   return (
     <div
-      className={`p-3.5 rounded-xl border transition flex items-center justify-between gap-3 ${
+      className={`p-3.5 rounded-xl border transition flex flex-col justify-between gap-2 ${
         abnormal
-          ? 'bg-red-50/80 border-red-200 text-red-950'
-          : 'bg-slate-50 border-slate-200/80 text-slate-800'
+          ? 'bg-red-50/90 border-red-200 text-red-950 shadow-xs'
+          : 'bg-slate-50/90 border-slate-200/90 text-slate-800'
       }`}
     >
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-            abnormal ? 'bg-red-100 text-red-600' : 'bg-cyan-100 text-cyan-700'
-          }`}
-        >
-          <IconComponent className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <div className="text-[11px] font-medium text-slate-500 truncate">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              abnormal ? 'bg-red-100 text-red-600' : 'bg-cyan-100 text-cyan-700'
+            }`}
+          >
+            <IconComponent className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-semibold text-slate-600 leading-tight">
             {config.label}
-          </div>
-          <div className="text-sm font-bold truncate">
-            {value}
-          </div>
+          </span>
         </div>
+
+        {abnormal && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 flex-shrink-0">
+            {config.abnormalLabel || 'Alert'}
+          </span>
+        )}
       </div>
 
-      {abnormal && (
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 flex-shrink-0">
-          {config.abnormalLabel || 'Alert'}
-        </span>
-      )}
+      <div className="pt-1">
+        <div className="text-base font-extrabold tracking-tight text-slate-900 break-words">
+          {value}
+        </div>
+      </div>
     </div>
   );
 };
