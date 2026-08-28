@@ -139,9 +139,7 @@ export default function NewIntake() {
           uploadData.append('documents', file);
         });
 
-        await api.post(`/api/intake/${intakeId}/upload`, uploadData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await api.post(`/api/intake/${intakeId}/upload`, uploadData);
       }
 
       // 3. Redirect to dashboard

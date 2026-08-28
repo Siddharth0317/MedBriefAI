@@ -1,5 +1,5 @@
 const { validationResult } = require('express-validator');
-const pdfParse = require('pdf-parse');
+const { extractTextFromPDF } = require('../services/pdfExtractionService');
 const PatientIntake = require('../models/PatientIntake');
 const MedicalDocument = require('../models/MedicalDocument');
 const ragService = require('../services/ragService');
@@ -278,17 +278,10 @@ const uploadDocuments = async (req, res, next) => {
     const savedDocuments = [];
 
     for (const file of req.files) {
-      let extractedText = '';
-      let pageCount = 1;
-
-      try {
-        const parsed = await pdfParse(file.buffer);
-        extractedText = parsed.text ? parsed.text.trim() : '';
-        pageCount = parsed.numpages || 1;
-      } catch (parseError) {
-        console.warn(`PDF parse warning for ${file.originalname}: ${parseError.message}`);
-        extractedText = `[Notice: Text could not be automatically extracted from this PDF format. Original filename: ${file.originalname}]`;
-      }
+      const { extractedText, pageCount } = await extractTextFromPDF(
+        file.buffer,
+        file.originalname
+      );
 
       const medicalDoc = await MedicalDocument.create({
         intakeId: intake._id,

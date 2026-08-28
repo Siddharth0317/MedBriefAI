@@ -13,6 +13,11 @@ const api = axios.create({
 // Request Interceptor: Attach JWT Token if present
 api.interceptors.request.use(
   (config) => {
+    // If sending FormData, remove Content-Type so browser generates multipart boundary
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     if (typeof window !== 'undefined') {
       // Retrieve token from localStorage if zustand persist has stored it
       try {
