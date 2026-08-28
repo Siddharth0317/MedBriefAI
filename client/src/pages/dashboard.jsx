@@ -430,16 +430,6 @@ export default function Dashboard() {
                           </div>
                         )}
 
-                        {/* Care Plan Action Checklist Summary */}
-                        {intake.aiSummary?.suggestedActions?.length > 0 && (
-                          <div className="mt-2.5 flex items-center gap-2 text-[11px] text-slate-700 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 w-fit">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-cyan-600" />
-                            <span className="font-semibold">
-                              Clinical Care Plan: {(intake.aiSummary.completedActions || []).length} of {intake.aiSummary.suggestedActions.length} actions completed by physician
-                            </span>
-                          </div>
-                        )}
-
                         {/* Expandable RAG Vector Search & Chunk Preview (Doctors Only) */}
                         {user?.role === 'doctor' && expandedRAG[intake._id] && (
                           <div className="mt-4 pt-4 border-t border-slate-100 animate-fade-in">
