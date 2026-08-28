@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Printer, 
   Download, 
@@ -11,20 +11,22 @@ import {
   Pill, 
   AlertTriangle,
   Building2,
-  Check
+  Check,
+  Loader2,
+  FileCheck
 } from 'lucide-react';
 
 /**
  * PrescriptionSlipModal Component
  * Renders an official medical prescription slip with printable letterhead,
- * sticky top/bottom toolbars, print styles, and direct download actions.
+ * direct PDF generation and 1-page browser print support.
  * @param {Object} props
  * @param {Object} props.intake - Intake details
  * @param {Array} [props.documents=[]] - Attached documents
  * @param {Function} props.onClose - Modal close handler
  */
 const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
-  if (!intake) return null;
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
   // Close on Escape key press
   useEffect(() => {
@@ -37,6 +39,8 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  if (!intake) return null;
+
   const doctorName = intake.assignedDoctorId?.name || 'Attending Physician';
   const patientName = intake.patientId?.name || 'Patient';
   const issueDate = new Date(intake.updatedAt || intake.createdAt).toLocaleDateString('en-US', {
@@ -45,56 +49,35 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
     day: 'numeric',
   });
 
+  // Native Browser Print Dialog
   const handlePrint = () => {
     window.print();
   };
 
-  // Direct Text File Download Fallback
-  const handleDownloadTextFile = () => {
-    const content = `=====================================================
-MEDBRIEF_AI CLINICAL CONSULTATION & PRESCRIPTION SLIP
-=====================================================
-Ref ID: ${intake._id}
-Date: ${issueDate}
-Status: Completed
+  // Direct Client-Side PDF Generator & Downloader
+  const handleDownloadPDF = async () => {
+    setIsDownloadingPDF(true);
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('prescription-printable-area');
 
-PATIENT DETAILS:
-Name: ${patientName}
-Email: ${intake.patientId?.email || 'N/A'}
-Duration: ${intake.duration}
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `Prescription_${patientName.replace(/\s+/g, '_')}_${intake._id.slice(-6)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+      };
 
-ATTENDING PHYSICIAN:
-Doctor: Dr. ${doctorName}
-Clinical Network: MedBrief_AI Outpatient Triage Center
-
-REPORTED CHIEF COMPLAINT:
-${intake.symptoms}
-
-CURRENT MEDICATIONS:
-${intake.currentMedications?.length ? intake.currentMedications.join(', ') : 'None reported'}
-
-KNOWN ALLERGIES:
-${intake.allergies?.length ? intake.allergies.join(', ') : 'No known allergies'}
-
-=====================================================
-℞ PHYSICIAN'S Rx & CLINICAL ORDERS:
-=====================================================
-${intake.doctorNotes || 'No specific clinical notes recorded.'}
-
-=====================================================
-Digitally Signed by Dr. ${doctorName}
-Verified via MedBrief_AI Healthcare Platform
-=====================================================`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Prescription_${patientName.replace(/\s+/g, '_')}_${intake._id.slice(-6)}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      // Fallback to print dialog if html2canvas encounters issues
+      window.print();
+    } finally {
+      setIsDownloadingPDF(false);
+    }
   };
 
   return (
@@ -122,22 +105,33 @@ Verified via MedBrief_AI Healthcare Platform
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-600/30 transition cursor-pointer"
-              title="Print or Save as PDF via browser"
+              onClick={handleDownloadPDF}
+              disabled={isDownloadingPDF}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-600/30 transition cursor-pointer disabled:opacity-50"
+              title="Download official PDF file"
             >
-              <Printer className="w-4 h-4" />
-              <span>Print / Save PDF</span>
+              {isDownloadingPDF ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF</span>
+                </>
+              )}
             </button>
 
             <button
               type="button"
-              onClick={handleDownloadTextFile}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition"
-              title="Download text file copy"
+              onClick={handlePrint}
+              disabled={isDownloadingPDF}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              title="Open browser print dialog"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download File</span>
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Print</span>
             </button>
 
             <button
@@ -152,7 +146,7 @@ Verified via MedBrief_AI Healthcare Platform
         </div>
 
         {/* Scrollable Prescription Body Container */}
-        <div className="overflow-y-auto flex-1 p-6 sm:p-10 text-slate-900 font-sans space-y-7 bg-white" id="prescription-printable-area">
+        <div className="overflow-y-auto flex-1 p-6 sm:p-10 text-slate-900 font-sans space-y-6 bg-white" id="prescription-printable-area">
           
           {/* Clinic Header / Letterhead */}
           <div className="border-b-2 border-slate-900 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -174,7 +168,7 @@ Verified via MedBrief_AI Healthcare Platform
             </div>
 
             <div className="text-left sm:text-right text-xs text-slate-600 space-y-0.5">
-              <div className="font-bold text-slate-900 text-sm">Medical Consultation Slip</div>
+              <div className="font-bold text-slate-900 text-sm">Medical Prescription Slip</div>
               <div>Ref ID: <span className="font-mono text-cyan-800 font-bold">{intake._id}</span></div>
               <div className="flex items-center sm:justify-end gap-1 text-slate-500">
                 <Calendar className="w-3.5 h-3.5" />
@@ -251,7 +245,7 @@ Verified via MedBrief_AI Healthcare Platform
           </div>
 
           {/* Footer & Electronic Signature */}
-          <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-end justify-between gap-6 text-xs text-slate-500">
+          <div className="pt-5 border-t border-slate-200 flex flex-col sm:flex-row sm:items-end justify-between gap-6 text-xs text-slate-500">
             <div className="space-y-1 max-w-sm">
               <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-xs">
                 <ShieldCheck className="w-4 h-4" />
@@ -282,7 +276,7 @@ Verified via MedBrief_AI Healthcare Platform
         <div className="print:hidden p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between flex-shrink-0">
           <div className="text-xs text-slate-500 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Official medical record</span>
+            <span>Official medical consultation record</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -296,10 +290,29 @@ Verified via MedBrief_AI Healthcare Platform
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+              disabled={isDownloadingPDF}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Print / Save PDF</span>
+              <span>Print</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadPDF}
+              disabled={isDownloadingPDF}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer disabled:opacity-50"
+            >
+              {isDownloadingPDF ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF File</span>
+                </>
+              )}
             </button>
           </div>
         </div>
