@@ -1,8 +1,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const env = require('../config/env');
 
+let isGeminiGenDisabled = false;
+const isValidGeminiKey = env.GEMINI_API_KEY && env.GEMINI_API_KEY.startsWith('AIzaSy');
+
 let genAI = null;
-if (env.GEMINI_API_KEY) {
+if (isValidGeminiKey) {
   try {
     genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
   } catch (err) {
@@ -164,16 +167,16 @@ async function callOpenRouter(prompt, systemPrompt = '') {
  * @returns {Promise<string|null>}
  */
 async function callGemini(prompt) {
-  if (!genAI || !env.GEMINI_API_KEY) return null;
+  if (!genAI || !isValidGeminiKey || isGeminiGenDisabled) return null;
 
   try {
-    // Try gemini-1.5-flash then gemini-1.5-pro
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
   } catch (err) {
-    console.warn(`Gemini generation call failed: ${err.message}`);
+    isGeminiGenDisabled = true;
+    console.log(`ℹ️ [AI Summary] Direct Gemini API unavailable (${err.message.slice(0, 80)}...). Routing through OpenRouter...`);
     return null;
   }
 }

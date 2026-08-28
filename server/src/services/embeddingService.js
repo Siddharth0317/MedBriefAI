@@ -3,9 +3,14 @@ const env = require('../config/env');
 
 const EMBEDDING_DIMENSION = 768;
 
+let isGeminiEmbeddingDisabled = false;
+
+// Check if Gemini key is in standard AI Studio format (AIzaSy...)
+const isValidGeminiKey = env.GEMINI_API_KEY && env.GEMINI_API_KEY.startsWith('AIzaSy');
+
 // Initialize Google Generative AI client if key exists
 let genAI = null;
-if (env.GEMINI_API_KEY) {
+if (isValidGeminiKey) {
   try {
     genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
   } catch (err) {
@@ -127,7 +132,7 @@ async function generateEmbedding(text) {
   }
 
   // Tier 1: Gemini text-embedding-004
-  if (genAI && env.GEMINI_API_KEY) {
+  if (genAI && isValidGeminiKey && !isGeminiEmbeddingDisabled) {
     try {
       const model = genAI.getGenerativeModel({ model: 'text-embedding-004' });
       const result = await model.embedContent(text);
@@ -135,7 +140,8 @@ async function generateEmbedding(text) {
         return result.embedding.values;
       }
     } catch (geminiError) {
-      console.warn(`Gemini embedding API call failed: ${geminiError.message}. Trying Tier 2 fallback...`);
+      isGeminiEmbeddingDisabled = true;
+      console.log(`ℹ️ [Embedding Service] Direct Gemini API unavailable (${geminiError.message.slice(0, 80)}...). Routing through OpenRouter...`);
     }
   }
 
