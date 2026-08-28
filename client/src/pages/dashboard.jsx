@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuthStore } from '../store/authStore';
 import RAGChunkPreview from '../components/RAGChunkPreview';
+import PrescriptionSlipModal from '../components/PrescriptionSlipModal';
 import api from '../services/api';
 import { 
   Activity, 
@@ -23,7 +24,10 @@ import {
   Filter, 
   Pill, 
   AlertTriangle,
-  FileCheck
+  FileCheck,
+  Printer,
+  Download,
+  ShieldCheck
 } from 'lucide-react';
 
 const STATUS_BADGES = {
@@ -68,6 +72,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
   const [expandedRAG, setExpandedRAG] = useState({});
+  const [prescriptionModalIntake, setPrescriptionModalIntake] = useState(null);
 
   const toggleRAG = (intakeId) => {
     setExpandedRAG((prev) => ({ ...prev, [intakeId]: !prev[intakeId] }));
@@ -424,9 +429,23 @@ export default function Dashboard() {
                                 </span>
                               )}
                             </div>
-                            <p className="whitespace-pre-wrap leading-relaxed text-emerald-950 font-medium">
+                            <p className="whitespace-pre-wrap leading-relaxed text-emerald-950 font-medium mb-2.5">
                               {intake.doctorNotes}
                             </p>
+                            <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between">
+                              <span className="text-[10px] text-emerald-800 font-semibold flex items-center gap-1">
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Official Prescription Available</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setPrescriptionModalIntake(intake)}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-100/80 hover:bg-emerald-200/80 px-2.5 py-1 rounded-lg transition"
+                              >
+                                <Printer className="w-3 h-3" />
+                                <span>Download Prescription</span>
+                              </button>
+                            </div>
                           </div>
                         )}
 
@@ -484,6 +503,15 @@ export default function Dashboard() {
             </div>
           )}
         </main>
+
+        {/* Modal: Official Prescription Slip */}
+        {prescriptionModalIntake && (
+          <PrescriptionSlipModal
+            intake={prescriptionModalIntake}
+            documents={prescriptionModalIntake.documents || []}
+            onClose={() => setPrescriptionModalIntake(null)}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );

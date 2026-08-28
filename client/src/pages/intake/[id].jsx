@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import ClinicalSummaryCard from '../../components/ClinicalSummaryCard';
 import RAGChatBox from '../../components/RAGChatBox';
+import PrescriptionSlipModal from '../../components/PrescriptionSlipModal';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 import { 
@@ -24,7 +25,9 @@ import {
   ClipboardList,
   ShieldCheck,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Printer,
+  Download
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -54,8 +57,9 @@ export default function IntakeDetail() {
   // AI Generation state (Doctor only)
   const [isGeneratingSOAP, setIsGeneratingSOAP] = useState(false);
 
-  // Document preview modal
+  // Document preview & Prescription modals
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
 
   const fetchIntakeDetails = useCallback(async () => {
     if (!id) return;
@@ -182,6 +186,18 @@ export default function IntakeDetail() {
                     ))}
                   </select>
                 </div>
+
+                {doctorNotes && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPrescriptionModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold shadow-sm transition"
+                    title="Preview & Print Official Prescription"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="hidden sm:inline">Prescription</span>
+                  </button>
+                )}
 
                 <button
                   onClick={handleSaveNotes}
@@ -465,7 +481,7 @@ export default function IntakeDetail() {
 
             {/* Doctor's Consultation Notes Card */}
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="p-5 bg-gradient-to-r from-slate-900 to-cyan-950 text-white flex items-center justify-between">
+              <div className="p-5 bg-gradient-to-r from-slate-900 to-cyan-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-300">
                     <Stethoscope className="w-5 h-5" />
@@ -475,16 +491,29 @@ export default function IntakeDetail() {
                       Doctor's Consultation & Prescription Notes
                     </h3>
                     <p className="text-xs text-slate-300">
-                      {intake.assignedDoctorId?.name ? `Attending: ${intake.assignedDoctorId.name}` : 'Medical Staff Review'}
+                      {intake.assignedDoctorId?.name ? `Attending: Dr. ${intake.assignedDoctorId.name}` : 'Medical Staff Review'}
                     </p>
                   </div>
                 </div>
 
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                  intake.status === 'Completed' ? 'bg-emerald-500 text-white' : 'bg-amber-500/20 text-amber-300 border border-amber-400/20'
-                }`}>
-                  {intake.status === 'Completed' ? 'Consultation Completed' : 'Pending Review'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    intake.status === 'Completed' ? 'bg-emerald-500 text-white' : 'bg-amber-500/20 text-amber-300 border border-amber-400/20'
+                  }`}>
+                    {intake.status === 'Completed' ? 'Consultation Completed' : 'Pending Review'}
+                  </span>
+
+                  {intake.doctorNotes && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPrescriptionModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-sm transition"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Download Prescription</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="p-6">
@@ -493,10 +522,20 @@ export default function IntakeDetail() {
                     <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">
                       {intake.doctorNotes}
                     </div>
-                    <p className="text-xs text-slate-500 flex items-center gap-1">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                      <span>Verified clinical advice provided for this consultation record.</span>
-                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-xs text-slate-500">
+                      <p className="flex items-center gap-1">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <span>Verified clinical advice provided for this consultation record.</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowPrescriptionModal(true)}
+                        className="text-cyan-700 hover:text-cyan-800 font-bold inline-flex items-center gap-1"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Print Official Rx Slip</span>
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="p-8 text-center space-y-2">
@@ -647,6 +686,15 @@ export default function IntakeDetail() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal: Official Prescription Slip */}
+        {showPrescriptionModal && (
+          <PrescriptionSlipModal
+            intake={intake}
+            documents={documents}
+            onClose={() => setShowPrescriptionModal(false)}
+          />
         )}
       </div>
     </ProtectedRoute>
