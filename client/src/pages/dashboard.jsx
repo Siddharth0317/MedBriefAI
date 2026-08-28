@@ -353,7 +353,7 @@ export default function Dashboard() {
                           {user?.role === 'doctor' && intake.patientId && (
                             <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
                               <User className="w-3.5 h-3.5 text-cyan-600" />
-                              {intake.patientId.name} ({intake.patientId.email})
+                              {intake.patientId.name}
                             </span>
                           )}
 

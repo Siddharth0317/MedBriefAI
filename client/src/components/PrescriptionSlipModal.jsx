@@ -243,7 +243,6 @@ const PrescriptionSlipModal = ({ intake, documents = [], onClose }) => {
                 Patient Information
               </span>
               <div className="font-bold text-sm text-slate-900">{patientName}</div>
-              <div className="text-slate-600">{intake.patientId?.email}</div>
               <div className="text-slate-500 mt-1">
                 Symptom Duration: <span className="font-semibold text-slate-800">{intake.duration}</span>
               </div>

@@ -270,7 +270,6 @@ export default function IntakeDetail() {
                       <h3 className="font-bold text-sm text-slate-900">
                         {intake.patientId?.name || 'Patient'}
                       </h3>
-                      <p className="text-xs text-slate-500">{intake.patientId?.email}</p>
                     </div>
                   </div>
 

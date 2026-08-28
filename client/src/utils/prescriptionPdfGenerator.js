@@ -71,13 +71,12 @@ export const generatePrescriptionPDF = (intake) => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
-  doc.text(patientName, margin + 6, y + 13);
+  doc.text(patientName, margin + 6, y + 14);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(71, 85, 105);
-  doc.text(`Email: ${patientEmail}`, margin + 6, y + 18);
-  doc.text(`Duration: ${intake.duration || 'N/A'}`, margin + 6, y + 23);
+  doc.text(`Duration: ${intake.duration || 'N/A'}`, margin + 6, y + 21);
 
   // Doctor Column (Right side of box)
   const col2X = margin + (contentWidth / 2) + 5;
