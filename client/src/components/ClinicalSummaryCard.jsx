@@ -20,17 +20,23 @@ import {
  * @param {Function} props.onGenerate - Callback to trigger/refresh AI summary
  * @param {boolean} [props.isGenerating=false] - Generating loading state
  * @param {boolean} [props.canEdit=true] - Can trigger generation
+ * @param {Array<string>} [props.completedActions=[]] - Persistent checklist of completed actions
+ * @param {Function} [props.onToggleAction] - Callback when action is toggled
  */
 const ClinicalSummaryCard = ({
   aiSummary,
   onGenerate,
   isGenerating = false,
   canEdit = true,
+  completedActions = [],
+  onToggleAction,
 }) => {
-  const [completedActions, setCompletedActions] = useState({});
+  const isActionDone = (actionText) => completedActions.includes(actionText);
 
-  const toggleAction = (idx) => {
-    setCompletedActions((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  const toggleAction = (actionText) => {
+    if (onToggleAction) {
+      onToggleAction(actionText);
+    }
   };
 
   const hasSummary =
@@ -178,11 +184,11 @@ const ClinicalSummaryCard = ({
               </div>
               <div className="space-y-2">
                 {aiSummary.suggestedActions.map((action, idx) => {
-                  const isDone = Boolean(completedActions[idx]);
+                  const isDone = isActionDone(action);
                   return (
                     <div
                       key={idx}
-                      onClick={() => toggleAction(idx)}
+                      onClick={() => toggleAction(action)}
                       className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between gap-3 ${
                         isDone
                           ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900 line-through'

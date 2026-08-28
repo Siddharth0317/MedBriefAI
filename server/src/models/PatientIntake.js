@@ -7,6 +7,7 @@ const AISummarySchema = new mongoose.Schema(
     flaggedRisks: [{ type: String }],
     extractedVitals: { type: mongoose.Schema.Types.Mixed, default: {} },
     suggestedActions: [{ type: String }],
+    completedActions: [{ type: String }],
     generatedAt: { type: Date },
   },
   { _id: false }

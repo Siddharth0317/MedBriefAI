@@ -181,15 +181,22 @@ const updateIntake = async (req, res, next) => {
       if (req.body.currentMedications) intake.currentMedications = req.body.currentMedications;
       if (req.body.allergies) intake.allergies = req.body.allergies;
     } else if (req.user.role === 'doctor') {
-      // Doctor can update status and clinical notes
+      // Doctor can update status, clinical notes, and action checklist
       if (req.body.status) intake.status = req.body.status;
       if (req.body.doctorNotes !== undefined) intake.doctorNotes = req.body.doctorNotes;
+      if (req.body.completedActions !== undefined) {
+        if (!intake.aiSummary) intake.aiSummary = {};
+        intake.aiSummary.completedActions = req.body.completedActions;
+      }
       if (req.body.assignedDoctorId) intake.assignedDoctorId = req.body.assignedDoctorId;
       else if (!intake.assignedDoctorId) intake.assignedDoctorId = req.user._id;
     }
 
     intake.updatedAt = Date.now();
     await intake.save();
+
+    await intake.populate('patientId', 'name email role');
+    await intake.populate('assignedDoctorId', 'name email role');
 
     return res.status(200).json({
       success: true,

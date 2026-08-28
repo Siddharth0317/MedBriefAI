@@ -392,32 +392,46 @@ export default function Dashboard() {
                             </div>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => toggleRAG(intake._id)}
-                            className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg border font-semibold transition ${
-                              expandedRAG[intake._id]
-                                ? 'bg-cyan-600 text-white border-cyan-600 shadow-sm'
-                                : 'bg-cyan-50 text-cyan-800 border-cyan-200 hover:bg-cyan-100'
-                            }`}
-                          >
-                            <FileCheck className="w-3 h-3" />
-                            <span>
-                              {intake.documentCount || 0} PDF Report(s) • {expandedRAG[intake._id] ? 'Hide RAG Search' : 'Explore Chunks'}
-                            </span>
-                          </button>
+                          {user?.role === 'doctor' && (
+                            <button
+                              type="button"
+                              onClick={() => toggleRAG(intake._id)}
+                              className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg border font-semibold transition ${
+                                expandedRAG[intake._id]
+                                  ? 'bg-cyan-600 text-white border-cyan-600 shadow-sm'
+                                  : 'bg-cyan-50 text-cyan-800 border-cyan-200 hover:bg-cyan-100'
+                              }`}
+                            >
+                              <FileCheck className="w-3 h-3" />
+                              <span>
+                                {intake.documentCount || 0} PDF Report(s) • {expandedRAG[intake._id] ? 'Hide RAG Search' : 'Explore Chunks'}
+                              </span>
+                            </button>
+                          )}
                         </div>
 
                         {/* Doctor Notes if present */}
                         {intake.doctorNotes && (
-                          <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
-                            <span className="font-semibold text-slate-900 block mb-0.5">Doctor Notes:</span>
-                            {intake.doctorNotes}
+                          <div className="mt-3 p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-slate-800">
+                            <div className="flex items-center justify-between font-bold text-emerald-900 mb-1">
+                              <span className="flex items-center gap-1.5">
+                                <Stethoscope className="w-3.5 h-3.5 text-emerald-700" />
+                                <span>Doctor's Consultation & Prescription Notes:</span>
+                              </span>
+                              {intake.assignedDoctorId?.name && (
+                                <span className="text-[11px] text-emerald-700 font-medium">
+                                  Dr. {intake.assignedDoctorId.name}
+                                </span>
+                              )}
+                            </div>
+                            <p className="whitespace-pre-wrap leading-relaxed text-emerald-950 font-medium">
+                              {intake.doctorNotes}
+                            </p>
                           </div>
                         )}
 
-                        {/* Expandable RAG Vector Search & Chunk Preview */}
-                        {expandedRAG[intake._id] && (
+                        {/* Expandable RAG Vector Search & Chunk Preview (Doctors Only) */}
+                        {user?.role === 'doctor' && expandedRAG[intake._id] && (
                           <div className="mt-4 pt-4 border-t border-slate-100 animate-fade-in">
                             <RAGChunkPreview
                               intakeId={intake._id}
@@ -433,7 +447,7 @@ export default function Dashboard() {
                           href={`/intake/${intake._id}`}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold shadow-sm transition"
                         >
-                          <span>Open Workstation</span>
+                          <span>{user?.role === 'doctor' ? 'Open Workstation' : 'View Record'}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </Link>
 

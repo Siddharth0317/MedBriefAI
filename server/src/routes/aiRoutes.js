@@ -1,11 +1,12 @@
 const express = require('express');
 const { generateSummary, chatWithIntake } = require('../controllers/aiController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router({ mergeParams: true });
 
-// All AI briefing and RAG chat routes require authentication
+// All AI clinical decision support tools require doctor authentication
 router.use(protect);
+router.use(authorize('doctor'));
 
 router.post('/:id/generate-summary', generateSummary);
 router.post('/:id/chat', chatWithIntake);
