@@ -58,7 +58,8 @@ const getIntakes = async (req, res, next) => {
     let query = {};
     const { status } = req.query;
 
-    if (req.user.role === 'patient') {
+    // Strict role isolation: Non-doctors can only ever see their own records
+    if (req.user.role !== 'doctor') {
       query.patientId = req.user._id;
     }
 
@@ -120,9 +121,9 @@ const getIntakeById = async (req, res, next) => {
       });
     }
 
-    // Role access authorization check
+    // Role access authorization check: Non-doctors can only view their own intake
     if (
-      req.user.role === 'patient' &&
+      req.user.role !== 'doctor' &&
       intake.patientId._id.toString() !== req.user._id.toString()
     ) {
       return res.status(403).json({
