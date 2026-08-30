@@ -107,6 +107,29 @@ app.use('/api/intake/:id/chat', aiLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Root Endpoint - Backend Status & Diagnostics
+app.get('/', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.status(200).json({
+    success: true,
+    message: 'MedBrief_AI Backend is running successfully! 🚀',
+    status: 'online',
+    service: 'MedBrief_AI REST API',
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+    environment: env.NODE_ENV,
+    database: {
+      status: dbStatus,
+      name: mongoose.connection.name || 'medbrief_db',
+    },
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      intake: '/api/intake',
+    },
+  });
+});
+
 // Comprehensive Health & Monitoring Endpoint
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
